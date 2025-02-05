@@ -17,6 +17,7 @@ public class App
         UserService userService = context.getBean(UserService.class);
 
         userService.addUser("Tushar","tushar.p@gmail.com");
+        
 
         userService.getUsers();
     }
