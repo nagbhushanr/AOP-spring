@@ -2,11 +2,12 @@ package org.example.configuration;
 
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@ComponentScan(basePackages = {"org.example.entity","org.example.repository",
-		"org.example.service"})
+@EnableAspectJAutoProxy(proxyTargetClass = true)
+@ComponentScan(basePackages = {"org.example"})
 @Import(MongoConfig.class)
 public class AppConfig {
 }

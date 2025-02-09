@@ -1,10 +1,14 @@
 package org.example.service;
 
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.List;
+import java.util.Objects;
 
+import org.example.customAnnotation.RetryDBOperation;
 import org.example.entity.User;
 import org.example.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,5 +23,14 @@ public class UserService {
 
 	public List<User> getUsers(){
 		return userRepository.getAllUsers();
+	}
+
+	@RetryDBOperation
+	public User getUserByName(String name) throws Exception{
+		User user = userRepository.getUserByName(name);
+		if(Objects.isNull(user)){
+			throw new NotFoundException();
+		}
+		return user;
 	}
 }
