@@ -22,17 +22,46 @@ public class CommonAspects {
 	public Object retryDBOperation(ProceedingJoinPoint joinPoint, Object argument) throws Throwable {
 		String methodName = joinPoint.getSignature().getName();
 		Class<?> targetClass = joinPoint.getTarget().getClass();
-		Method method = targetClass.getMethod(methodName,String.class);
-		try {
-			return joinPoint.proceed();
-		}catch (Exception exception){
-			if(exception instanceof NotFoundException) {
-				while (maxRetries > 0){
-					Object result = method.invoke(joinPoint.getTarget(),argument.toString());
-					if(!Objects.isNull(result)){
-						return result;
+
+		// Retrieve method dynamically (supports overloaded methods)
+		Method[] methods = targetClass.getMethods();
+		Method targetMethod = null;
+		for (Method method : methods) {
+			if (method.getName().equals(methodName) && method.getParameterCount() == 1) {
+				targetMethod = method;
+				break;
+			}
+		}
+
+		if (targetMethod == null) {
+			throw new NoSuchMethodException("No matching method found for " + methodName);
+		}
+
+		int maxRetries = 3;  // Define retries inside method scope to reset for each call
+
+		while (maxRetries > 0) {
+			try {
+				return joinPoint.proceed();
+			} catch (Exception exception) {
+				if (exception instanceof NotFoundException) {
+					System.out.println("inside AOP retry logic, remaining retries: " + maxRetries);
+
+					try {
+						Object result = targetMethod.invoke(joinPoint.getTarget(), argument.toString());
+						if (result != null) {
+							return result;
+						}
+					} catch (Exception e) {
+						System.out.println("Retry failed: " + e.getMessage());
 					}
-					maxRetries = maxRetries - 1;
+
+					maxRetries--;
+
+					if (maxRetries == 0) {
+						throw exception;  // Re-throw original exception if all retries fail
+					}
+				} else {
+					throw exception;  // If it's not a NotFoundException, rethrow immediately
 				}
 			}
 		}
